@@ -1,0 +1,280 @@
+import { useMemo } from 'react';
+import type { Event } from '../property';
+import useCalendarStore from '../stores/calendarStore';
+
+interface DetailsPanelProps {
+  selectedDateLabel: string;
+  onAddEvent: () => void;
+  users: string[];
+  availability: Record<string, 'full' | 'day' | 'night' | null>;
+}
+
+export default function DetailsPanel({
+  selectedDateLabel,
+  onAddEvent,
+  users,
+  availability,
+}: DetailsPanelProps) {
+  const selectedDateFromStore = useCalendarStore((state) => state.selectedDate);
+  const newEvent = useCalendarStore((state) => state.newEvent);
+  const setNewEvent = useCalendarStore((state) => state.setNewEvent);
+  const savedEvents = useCalendarStore((state) => state.savedEvents);
+  const selectedDate = useCalendarStore((state) => state.selectedDate);
+  const selectedEvents = useMemo(() => {
+  return (savedEvents as Event[]).filter(
+    (event) => event.startDateTime <= selectedDate+"T24:00" && event.endDateTime >= selectedDate+"T00:00"
+  );
+}, [savedEvents, selectedDate]);
+
+  const duration = newEvent.type[0] ?? 'none';
+  const isCustomDuration = duration === 'custom';
+  const isTimeSelectionEnabled = duration !== 'none';
+
+  const getDefaultRange = (nextDuration: Event['type'][number]) => {
+    const baseDate = selectedDateFromStore;
+
+    switch (nextDuration) {
+      case 'full':
+        return { startDateTime: `${baseDate}T09:00`, endDateTime: `${baseDate}T17:00` };
+      case 'lunch':
+        return { startDateTime: `${baseDate}T11:00`, endDateTime: `${baseDate}T13:00` };
+      case 'dinner':
+        return { startDateTime: `${baseDate}T18:00`, endDateTime: `${baseDate}T21:00` };
+      case 'custom':
+        return { startDateTime: `${baseDate}T09:00`, endDateTime: `${baseDate}T23:00` };
+      default:
+        return { startDateTime: `${baseDate}T09:00`, endDateTime: `${baseDate}T10:00` };
+    }
+  };
+
+  const handleDurationChange = (value: string) => {
+    const nextDuration = value as Event['type'][number];
+    setNewEvent((current) => ({ ...current, type: [nextDuration] }));
+
+    if (nextDuration !== 'custom') {
+      setNewEvent((current) => ({ ...current, startDateTime: getDefaultRange(nextDuration).startDateTime, endDateTime: getDefaultRange(nextDuration).endDateTime }));
+    }
+  };
+
+  const getDateValue = (value: string) => value.split('T')[0] ?? selectedDateFromStore;
+  const getTimeValue = (value: string) => value.split('T')[1] ?? '09:00';
+  const buildDateTime = (date: string, time: string) => `${date}T${time}`;
+  
+  const handleStartDateChange = (value: string) => {
+    const nextStart = buildDateTime(value, getTimeValue(newEvent.startDateTime));
+    const nextEnd = newEvent.endDateTime < nextStart ? nextStart : newEvent.endDateTime;
+
+    setNewEvent((current) => ({
+      ...current,
+      startDateTime: nextStart,
+      endDateTime: nextEnd,
+    }));
+  };
+
+  const handleEndDateChange = (value: string) => {
+    const nextEnd = buildDateTime(value, getTimeValue(newEvent.endDateTime));
+    const nextStart = newEvent.startDateTime > nextEnd ? nextEnd : newEvent.startDateTime;
+
+    setNewEvent((current) => ({
+      ...current,
+      startDateTime: nextStart,
+      endDateTime: nextEnd,
+    }));
+  };
+
+  const handleStartTimeChange = (value: string) => {
+    const nextStart = buildDateTime(getDateValue(newEvent.startDateTime), value);
+    const nextEnd = newEvent.endDateTime < nextStart ? nextStart : newEvent.endDateTime;
+
+    setNewEvent((current) => ({
+      ...current,
+      startDateTime: nextStart,
+      endDateTime: nextEnd,
+    }));
+  };
+
+  const handleEndTimeChange = (value: string) => {
+    const nextEnd = buildDateTime(getDateValue(newEvent.endDateTime), value);
+    const nextStart = newEvent.startDateTime > nextEnd ? nextEnd : newEvent.startDateTime;
+
+    setNewEvent((current) => ({
+      ...current,
+      startDateTime: nextStart,
+      endDateTime: nextEnd,
+    }));
+  };
+
+  return (
+    <div className="relative overflow-y-auto">
+    <section className="flex absolute flex-col rounded-2xl border border-slate-800 bg-slate-900/80 p-6">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm uppercase tracking-[0.35em] text-cyan-400/90">Details</p>
+          <p className="mt-2 text-slate-300">Availability for {selectedDateLabel}</p>
+        </div>
+      </div>
+
+      <div className="mb-6 max-h-48 shrink-0 space-y-3 pr-2">
+        {users.map((user) => {
+          const status = availability[user] ?? null;
+          const statusLabel = status === 'full' ? 'Full' : status === 'day' ? 'day' : status === 'night' ? 'night' : 'Not set';
+          const statusClasses =
+            status === 'full'
+              ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200'
+              : status === 'day'
+              ? 'border-amber-500/30 bg-amber-500/10 text-amber-200'
+              : status === 'night'
+              ? 'border-violet-500/30 bg-violet-500/10 text-violet-200'
+              : 'border-slate-700 bg-slate-950/70 text-slate-400';
+
+          return (
+            <div key={user} className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-950/70 px-4 py-3">
+              <span className="text-sm font-medium text-slate-100">{user}</span>
+              <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${statusClasses}`}>
+                {statusLabel}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm uppercase tracking-[0.35em] text-cyan-400/90">Events</p>
+          <p className="mt-2 text-slate-300">{selectedEvents.length} event(s) for {selectedDateLabel}</p>
+        </div>
+      </div>
+
+      <div className="flex-1 space-y-3 pr-2">
+        {selectedEvents.length > 0 ? (
+          selectedEvents.map((event, index) => (
+            <div key={index} className="rounded-3xl border border-slate-800 bg-slate-950/70 p-4 text-slate-100">
+              <div className="font-semibold text-white">{event.title || event.description}</div>
+              <div className="mt-2 text-sm text-slate-400">
+                {event.type[0]} • {event.startDateTime} to {event.endDateTime}
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="rounded-3xl border border-dashed border-slate-700 bg-slate-950/60 p-6 text-center text-slate-500">
+            No events yet. Add a new event below.
+          </div>
+        )}
+      </div>
+
+      <div className="border-t border-slate-700 mt-6 flex items-center justify-between gap-3">
+        <p className="text-sm uppercase tracking-[0.35em] text-cyan-400/90">Create New Event:</p>
+      </div>
+
+      <div className=" mt-2 shrink-0 space-y-3">
+        <label className="block text-sm font-medium text-slate-300" htmlFor="new-event-title">
+          Title
+        </label>
+        <input
+          id="new-event-title"
+          value={newEvent.title}
+          onChange={(event) => setNewEvent((current) => ({ ...current, title: event.target.value }))}
+          className="w-full rounded-3xl border border-slate-800 bg-slate-950/90 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20"
+          placeholder="Enter a title"
+        />
+
+        <label className="block text-sm font-medium text-slate-300" htmlFor="new-event-duration">
+          Duration
+        </label>
+        <select
+          id="new-event-duration"
+          value={duration}
+          onChange={(event) => handleDurationChange(event.target.value)}
+          className="w-full rounded-3xl border border-slate-800 bg-slate-950/90 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20"
+        >
+          <option value="none">None</option>
+          <option value="custom">Custom</option>
+          <option value="full">Full Day</option>
+          <option value="lunch">Lunch</option>
+          <option value="dinner">Dinner</option>
+        </select>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label className="block text-sm font-medium text-slate-300" htmlFor="new-event-start-date">
+              Start date
+            </label>
+            <input
+              id="new-event-start-date"
+              type="date"
+              value={getDateValue(newEvent.startDateTime)}
+              onChange={(event) => handleStartDateChange(event.target.value)}
+              disabled={!isCustomDuration}
+              className="mt-1 w-full rounded-3xl border border-slate-800 bg-slate-950/90 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20 disabled:cursor-not-allowed disabled:border-slate-700 disabled:bg-slate-900/70 disabled:text-slate-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-300" htmlFor="new-event-end-date">
+              End date
+            </label>
+            <input
+              id="new-event-end-date"
+              type="date"
+              value={getDateValue(newEvent.endDateTime)}
+              onChange={(event) => handleEndDateChange(event.target.value)}
+              disabled={!isCustomDuration}
+              className="mt-1 w-full rounded-3xl border border-slate-800 bg-slate-950/90 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20 disabled:cursor-not-allowed disabled:border-slate-700 disabled:bg-slate-900/70 disabled:text-slate-500"
+            />
+          </div>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label className="block text-sm font-medium text-slate-300" htmlFor="new-event-start-time">
+              Start time
+            </label>
+            <input
+              id="new-event-start-time"
+              type="time"
+              step="900"
+              value={getTimeValue(newEvent.startDateTime)}
+              onChange={(event) => handleStartTimeChange(event.target.value)}
+              disabled={!isTimeSelectionEnabled}
+              className="mt-1 w-full rounded-3xl border border-slate-800 bg-slate-950/90 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20 disabled:cursor-not-allowed disabled:border-slate-700 disabled:bg-slate-900/70 disabled:text-slate-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-300" htmlFor="new-event-end-time">
+              End time
+            </label>
+            <input
+              id="new-event-end-time"
+              type="time"
+              step="900"
+              value={getTimeValue(newEvent.endDateTime)}
+              onChange={(event) => handleEndTimeChange(event.target.value)}
+              disabled={!isTimeSelectionEnabled}
+              className="mt-1 w-full rounded-3xl border border-slate-800 bg-slate-950/90 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20 disabled:cursor-not-allowed disabled:border-slate-700 disabled:bg-slate-900/70 disabled:text-slate-500"
+            />
+          </div>
+        </div>
+
+        <label className="block text-sm font-medium text-slate-300" htmlFor="new-event-description">
+          Description (optional)
+        </label>
+        <input
+          id="new-event-description"
+          value={newEvent.description}
+          onChange={(event) => setNewEvent((current) => ({ ...current, description: event.target.value }))}
+          className="w-full rounded-3xl border border-slate-800 bg-slate-950/90 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20"
+          placeholder="Optional description"
+        />
+
+        <button
+          type="button"
+          onClick={onAddEvent}
+          disabled={!newEvent.title.trim() || duration === 'none'}
+          className="w-full rounded-3xl bg-cyan-500 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+        >
+          Add event
+        </button>
+      </div>
+    </section>
+    </div>
+  );
+}
