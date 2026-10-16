@@ -1,5 +1,7 @@
 import { create } from 'zustand';
-import type { Event } from '../property';
+import type { Event, GroupCalendarData } from '../property';
+import { api } from '../api/client';
+import useGroupStore from './groupStore';
 
 export type DayStatus = 'full' | 'day' | 'night';
 export type SharedEvents = Event[];
@@ -23,6 +25,11 @@ interface CalendarStore {
   viewMonth: number;
   viewYear: number;
   selectionMode: SelectionMode;
+  loading: boolean;
+  error: string | null;
+  // per-group shared calendar data; the active group's data is mirrored into
+  // savedEvents/savedDateStatus so existing components keep working
+  groupData: Record<string, GroupCalendarData>;
   savedEvents: SharedEvents;
   draftEvents: SharedEvents;
   savedDateStatus: DateStatusMap;
@@ -37,7 +44,8 @@ interface CalendarStore {
   setSavedDateStatus: (value: DateStatusMap | ((current: DateStatusMap) => DateStatusMap)) => void;
   setDraftDateStatus: (value: DateStatusMap | ((current: DateStatusMap) => DateStatusMap)) => void;
   setNewEvent: (value: Event | ((current: Event) => Event)) => void;
-  saveChanges: () => void;
+  switchGroup: (groupId: string) => Promise<void>;
+  saveChanges: () => Promise<void>;
   cancelChanges: () => void;
 }
 
@@ -49,6 +57,9 @@ const useCalendarStore = create<CalendarStore>((set) => ({
   viewMonth: today.getMonth(),
   viewYear: today.getFullYear(),
   selectionMode: 'view',
+  loading: false,
+  error: null,
+  groupData: {},
   savedEvents: [],
   draftEvents: [],
   savedDateStatus: {},
@@ -84,11 +95,39 @@ const useCalendarStore = create<CalendarStore>((set) => ({
     set((state) => ({
       newEvent: typeof value === 'function' ? value(state.newEvent) : value,
     })),
-  saveChanges: () =>
-    set((state) => ({
-      savedDateStatus: state.draftDateStatus,
-      selectionMode: 'view',
-    })),
+  switchGroup: async (groupId) => {
+    set({ loading: true, error: null });
+    try {
+      const data = await api.fetchGroupCalendar(groupId);
+      set((state) => ({
+        groupData: { ...state.groupData, [groupId]: data },
+        savedEvents: data.events,
+        draftEvents: data.events,
+        savedDateStatus: data.dateStatus,
+        draftDateStatus: data.dateStatus,
+        selectionMode: 'view',
+        loading: false,
+      }));
+    } catch (err) {
+      set({ loading: false, error: err instanceof Error ? err.message : String(err) });
+    }
+  },
+  saveChanges: async () => {
+    const groupId = useGroupStore.getState().currentGroupId;
+    if (!groupId) return;
+    const { savedEvents, draftDateStatus } = useCalendarStore.getState();
+    const data: GroupCalendarData = { events: savedEvents, dateStatus: draftDateStatus };
+    try {
+      await api.saveGroupCalendar(groupId, data);
+      set((state) => ({
+        groupData: { ...state.groupData, [groupId]: data },
+        savedDateStatus: draftDateStatus,
+        selectionMode: 'view',
+      }));
+    } catch (err) {
+      set({ error: err instanceof Error ? err.message : String(err) });
+    }
+  },
   cancelChanges: () =>
     set((state) => ({
       draftDateStatus: state.savedDateStatus,
