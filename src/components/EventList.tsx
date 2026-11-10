@@ -24,7 +24,7 @@ export default function EventList({ currentUser, onRespond }: EventListProps) {
   };
 
   return (
-    <section className="mt-6 rounded-[2rem] border border-slate-800 bg-slate-950/80 p-5 shadow-xl shadow-slate-950/30">
+    <section className="mt-4 rounded-2xl border border-slate-800 bg-slate-950/80 p-4 shadow-xl shadow-slate-950/30 sm:mt-6 sm:rounded-[2rem] sm:p-5">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
           <p className="text-sm uppercase tracking-[0.35em] text-cyan-400/90">Events</p>

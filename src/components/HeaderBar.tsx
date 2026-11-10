@@ -25,7 +25,7 @@ export default function HeaderBar() {
         backgroundSize: '14px 14px, 100% 100%',
       }}
     >
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-3 py-3 sm:px-6 sm:py-4">
         <span className="text-sm font-semibold uppercase tracking-[0.35em] text-cyan-300">
           Find The PKs
         </span>

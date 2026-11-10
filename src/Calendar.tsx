@@ -198,16 +198,16 @@ function Calendar({ currentUser, users }: CalendarProps) {
   };
 
   return (
-    <div className="rounded-[2rem] border border-slate-800 bg-slate-950/90 p-5 shadow-2xl shadow-slate-950/40">
-      <div className="text-2xl font-bold p-1 mb-3">Mark Nei When Okay</div>
+    <div className="rounded-2xl border border-slate-800 bg-slate-950/90 p-3 shadow-2xl shadow-slate-950/40 sm:rounded-[2rem] sm:p-5">
+      <div className="p-1 mb-3 text-lg font-bold sm:text-2xl">Mark Nei When Okay</div>
       <CalendarHeader
         selectionMode={selectionMode}
         onSelectionModeChange={setSelectionMode}
         selectedStatus={selectedStatus}
       />
 
-      <div className="relative mt-8">
-        <div className="grid gap-5 xl:grid-cols-[2fr_1fr]">
+      <div className="relative mt-4 sm:mt-8">
+        <div className="grid gap-4 lg:grid-cols-[2fr_1fr] sm:gap-5">
           <CalendarGrid
             days={days}
             viewYear={viewYear}

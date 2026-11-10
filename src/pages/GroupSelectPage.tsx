@@ -32,8 +32,8 @@ export default function GroupSelectPage() {
   };
 
   return (
-    <main className="relative min-h-screen bg-slate-950 text-slate-100 px-6 py-10">
-      <div className="mx-auto max-w-3xl rounded-[2rem] border border-slate-800 bg-slate-900/80 p-8 shadow-2xl shadow-slate-950/50">
+    <main className="relative min-h-screen bg-slate-950 text-slate-100 px-3 py-4 sm:px-6 sm:py-10">
+      <div className="mx-auto max-w-3xl rounded-2xl border border-slate-800 bg-slate-900/80 p-4 shadow-2xl shadow-slate-950/50 sm:rounded-[2rem] sm:p-8">
         <div className="mb-6">
           <p className="text-sm uppercase tracking-[0.35em] text-cyan-400/90">Select Group</p>
           <p className="mt-2 text-slate-400">
@@ -41,7 +41,7 @@ export default function GroupSelectPage() {
           </p>
         </div>
 
-        <div className="mb-6 flex gap-3">
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row">
           <input
             value={newGroupName}
             onChange={(event) => setNewGroupName(event.target.value)}

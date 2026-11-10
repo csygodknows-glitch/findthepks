@@ -1,6 +1,7 @@
 ﻿import { create } from 'zustand';
 import type { Group, User } from '../property';
 import { api } from '../api/client';
+import useAuthStore from './authStore';
 
 interface GroupStore {
   users: User[];
@@ -25,10 +26,11 @@ const useGroupStore = create<GroupStore>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const [users, groups] = await Promise.all([api.fetchUsers(), api.fetchGroups()]);
+      const authUser = useAuthStore.getState().user;
       set({
         users,
         groups,
-        currentUserId: get().currentUserId ?? users[0]?.id ?? null,
+        currentUserId: authUser?.id ?? get().currentUserId ?? users[0]?.id ?? null,
         loading: false,
       });
     } catch (err) {

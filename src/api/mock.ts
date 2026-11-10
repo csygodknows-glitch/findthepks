@@ -4,11 +4,15 @@ import type { Group, GroupCalendarData, User } from '../property';
 const users: User[] = [
   { id: 'u1', name: 'Alice', email: 'alice@example.com' },
   { id: 'u2', name: 'Bob', email: 'bob@example.com' },
+  { id: 'u3', name: 'user1', email: 'user1@example.com' },
 ];
 
+// Mock credentials: user1 / pw1234
+const credentials: Record<string, string> = { user1: 'pw1234' };
+
 const groups: Group[] = [
-  { id: 'g1', name: 'Weekend Hikers', userIds: ['u1', 'u2'] },
-  { id: 'g2', name: 'Board Game Night', userIds: ['u1', 'u2'] },
+  { id: 'g1', name: 'Weekend Hikers', userIds: ['u1', 'u2', 'u3'] },
+  { id: 'g2', name: 'Board Game Night', userIds: ['u1', 'u2', 'u3'] },
 ];
 
 const calendars: Record<string, GroupCalendarData> = {
@@ -27,6 +31,7 @@ const calendars: Record<string, GroupCalendarData> = {
     dateStatus: {
       Alice: {},
       Bob: {},
+      user1: {},
     },
   },
   g2: {
@@ -34,6 +39,7 @@ const calendars: Record<string, GroupCalendarData> = {
     dateStatus: {
       Alice: {},
       Bob: {},
+      user1: {},
     },
   },
 };
@@ -42,6 +48,16 @@ let nextId = 3;
 const delay = (ms = 200) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const mockApi = {
+  async login(username: string, password: string): Promise<User> {
+    await delay();
+    if (credentials[username] !== password) {
+      throw new Error('Invalid username or password');
+    }
+    const user = users.find((u) => u.name === username);
+    if (!user) throw new Error('Invalid username or password');
+    return { ...user };
+  },
+
   async fetchUsers(): Promise<User[]> {
     await delay();
     return [...users];

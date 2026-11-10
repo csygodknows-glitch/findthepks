@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import useGroupStore from '../stores/groupStore';
+import useAuthStore from '../stores/authStore';
 
 interface UserProfilePanelProps {
   onClose: () => void;
@@ -16,6 +18,8 @@ function initials(name: string) {
 
 export default function UserProfilePanel({ onClose }: UserProfilePanelProps) {
   const { users, currentUserId, groups } = useGroupStore();
+  const { logout } = useAuthStore();
+  const navigate = useNavigate();
   const panelRef = useRef<HTMLDivElement>(null);
   const user = users.find((u) => u.id === currentUserId) ?? null;
 
@@ -43,7 +47,7 @@ export default function UserProfilePanel({ onClose }: UserProfilePanelProps) {
   return (
     <div
       ref={panelRef}
-      className="absolute right-6 top-full z-20 mt-2 w-72 rounded-3xl border border-slate-600/60 bg-slate-800/95 p-5 shadow-2xl shadow-slate-950/60 backdrop-blur-md"
+      className="absolute right-0 top-full z-20 mt-2 w-[min(18rem,calc(100vw-1.5rem))] rounded-3xl border border-slate-600/60 bg-slate-800/95 p-5 shadow-2xl shadow-slate-950/60 backdrop-blur-md"
     >
       {user ? (
         <>
@@ -75,14 +79,10 @@ export default function UserProfilePanel({ onClose }: UserProfilePanelProps) {
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={onClose}
-              className="flex-1 rounded-2xl bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400"
-            >
-              Login
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
+              onClick={() => {
+                logout();
+                navigate('/login');
+              }}
               className="flex-1 rounded-2xl border border-slate-600 bg-slate-900/60 px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-rose-400 hover:text-rose-200"
             >
               Logout
@@ -94,7 +94,10 @@ export default function UserProfilePanel({ onClose }: UserProfilePanelProps) {
           <p className="mb-3">Not logged in.</p>
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => {
+              onClose();
+              navigate('/login');
+            }}
             className="w-full rounded-2xl bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400"
           >
             Login

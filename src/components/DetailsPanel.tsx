@@ -105,8 +105,7 @@ export default function DetailsPanel({
   };
 
   return (
-    <div className="relative overflow-y-auto">
-    <section className="flex absolute flex-col rounded-2xl border border-slate-800 bg-slate-900/80 p-6">
+    <section className="flex flex-col rounded-2xl border border-slate-800 bg-slate-900/80 p-4 sm:p-6">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
           <p className="text-sm uppercase tracking-[0.35em] text-cyan-400/90">Details</p>
@@ -275,6 +274,5 @@ export default function DetailsPanel({
         </button>
       </div>
     </section>
-    </div>
   );
 }

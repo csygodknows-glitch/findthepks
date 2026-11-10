@@ -18,6 +18,10 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 const realApi = {
+  // auth
+  login: (username: string, password: string) =>
+    request<User>('/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) }),
+
   // users
   fetchUsers: () => request<User[]>('/users'),
 
